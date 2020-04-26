@@ -113,9 +113,12 @@ void setup() {
 void loop() { 
 
 //----------------------------------------------------------------------------- 
+  sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, 0, req_machine_start); 
+  Serial.println(buff_str); 
+
+//----------------------------------------------------------------------------- 
   while ((micros() - t_old) < 1000000L); t_old = micros(); 
   tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
 
 } 
- 
- 
+
