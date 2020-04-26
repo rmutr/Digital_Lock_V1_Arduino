@@ -10,6 +10,11 @@
 //----------------------------------------------------------------------------- 
 #include <Arduino.h>
 
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #define PIN_RX_0             3 
 #define PIN_TX_0             1 
 
@@ -35,6 +40,19 @@ int state_ix_mon = 0;
 volatile int req_machine_start = 0; 
 
 //----------------------------------------------------------------------------- 
+#define SCREEN_WIDTH       128 
+#define SCREEN_HEIGHT       64 
+#define OLED_RESET           4 
+#define GLCD_LINE_1         20 
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define GLCD_LINE_0          5 
+#define GLCD_LINE_1         20 
+#define GLCD_LINE_2         35 
+#define GLCD_LINE_3         50 
+
+//----------------------------------------------------------------------------- 
 void Interrupt_Service_Btn_Start(); 
 
 void Interrupt_Service_Btn_Start() { req_machine_start = 1; } 
@@ -55,6 +73,15 @@ void setup() {
 
   Serial.begin(115200); 
   Serial.println(buff_str); 
+  
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); 
+  display.setTextSize(1); 
+  display.setTextColor(WHITE); 
+
+  display.clearDisplay(); 
+  display.setCursor(0, GLCD_LINE_0); 
+  display.println(F(buff_str)); 
+  display.display(); 
 
 //----------------------------------------------------------------------------- 
   t_old = 0; 
