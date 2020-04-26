@@ -34,6 +34,11 @@ int state_ix_mon = 0;
 
 volatile int req_machine_start = 0; 
 
+//----------------------------------------------------------------------------- 
+void Interrupt_Service_Btn_Start(); 
+
+void Interrupt_Service_Btn_Start() { req_machine_start = 1; } 
+
 
 //----------------------------------------------------------------------------- 
 void setup() { 
@@ -42,6 +47,9 @@ void setup() {
 
   digitalWrite(PIN_PROCESS,   HIGH); 
   digitalWrite(PIN_BTN_START, HIGH); 
+
+  attachInterrupt(digitalPinToInterrupt(PIN_BTN_START) 
+    , Interrupt_Service_Btn_Start, FALLING); 
 
   sprintf(buff_str, "Digital Lock V1"); 
 
