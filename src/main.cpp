@@ -15,6 +15,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#include <LiquidCrystal_PCF8574.h>
+
 #define PIN_RX_0             3 
 #define PIN_TX_0             1 
 
@@ -53,6 +55,15 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define GLCD_LINE_3         50 
 
 //----------------------------------------------------------------------------- 
+#define CLCD_ADD_27       0x27 
+#define CLCD_ADD_3F       0x3F 
+
+#define CLCD_LINE_0          0 
+#define CLCD_LINE_1          1 
+
+LiquidCrystal_PCF8574 clcd(CLCD_ADD_27); 
+
+//----------------------------------------------------------------------------- 
 void Interrupt_Service_Btn_Start(); 
 
 void Interrupt_Service_Btn_Start() { req_machine_start = 1; } 
@@ -73,7 +84,7 @@ void setup() {
 
   Serial.begin(115200); 
   Serial.println(buff_str); 
-  
+
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); 
   display.setTextSize(1); 
   display.setTextColor(WHITE); 
@@ -82,6 +93,12 @@ void setup() {
   display.setCursor(0, GLCD_LINE_0); 
   display.println(F(buff_str)); 
   display.display(); 
+
+  clcd.begin(16, 2); 
+  clcd.init(); 
+  clcd.setBacklight(255); 
+  clcd.setCursor(0, CLCD_LINE_0); 
+  clcd.print(buff_str); 
 
 //----------------------------------------------------------------------------- 
   t_old = 0; 
@@ -94,6 +111,10 @@ void setup() {
 } 
 
 void loop() { 
+
+//----------------------------------------------------------------------------- 
+  while ((micros() - t_old) < 1000000L); t_old = micros(); 
+  tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
 
 } 
  
