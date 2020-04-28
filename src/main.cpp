@@ -39,6 +39,7 @@
 char buff_str[200] = {0}; 
 unsigned long t_old = 0; 
 int tmr_cnt = 0; 
+int wait_100ms = 0; 
 int error = 0; 
 
 int state_ix = 0; 
@@ -170,6 +171,7 @@ void setup() {
 //----------------------------------------------------------------------------- 
   t_old = 0; 
   tmr_cnt = 0; 
+  wait_100ms = 0; 
   error = 0; 
   state_ix = 0; 
   state_ix_mon = 0; 
@@ -186,46 +188,82 @@ void setup() {
 } 
 
 void loop() { 
-  if (bt_connected == true) { 
-    char bstr[50] = {0}; sprintf(bstr, "%02d", bt_txvalue_u8); 
-    pTxCharacteristic->setValue(bstr); 
-    pTxCharacteristic->notify(); 
-    bt_txvalue_u8++; if (bt_txvalue_u8 >= 100) { bt_txvalue_u8 = 0; } 
-    delay(1000); 
-  } 
-
+//----------------------------------------------------------------------------- 
   if (bt_connected_old != bt_connected) { 
     bt_connected_old = bt_connected; 
     if (bt_connected == false) { 
-      delay(500); // give the bluetooth stack the chance to get things ready 
-      pServer->startAdvertising(); // restart advertising 
       bt_connected_str = "-> Bluetooth disconnected"; 
+      state_ix = 0; 
     } else { 
       bt_connected_str = "-> Bluetooth connected"; 
     } 
   } 
 
 //----------------------------------------------------------------------------- 
-  sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
-  Serial.print(buff_str); 
+  state_ix_mon = state_ix; 
 
-  if (bt_rxvalue_str.length() > 0) { 
-    Serial.print("<- "); 
-    for (int i = 0; i < bt_rxvalue_str.length(); i++) { 
-      Serial.print(bt_rxvalue_str[i]); 
-    } 
-    bt_rxvalue_str = "";
+  switch (state_ix) { 
+    default: 
+    case 0: 
+      state_ix++; 
+      break; 
+
+    case 1: 
+      wait_100ms = 5; //<- Give the bluetooth stack the chance to get things ready 
+      state_ix++;
+      break; 
+
+    case 2: 
+      if (wait_100ms > 0) { 
+        wait_100ms--;
+      } else { 
+        state_ix++;
+      }
+      break; 
+
+    case 3: 
+      pServer->startAdvertising(); //<- Restart advertising 
+      state_ix++;
+      break; 
+
+    case 4: 
+      if (bt_connected == true) { state_ix++; } 
+      break; 
+
+    case 5: 
+      if (tmr_cnt == 0) { 
+        sprintf(buff_str, "%02d", bt_txvalue_u8); 
+        pTxCharacteristic->setValue(buff_str); 
+        pTxCharacteristic->notify(); 
+        bt_txvalue_u8++; if (bt_txvalue_u8 >= 100) { bt_txvalue_u8 = 0; } 
+      } 
+      break; 
+
   } 
 
-  if (bt_connected_str.length() > 0) {
-    Serial.print(bt_connected_str); 
-    bt_connected_str = "";
-  }
+//----------------------------------------------------------------------------- 
+  if (tmr_cnt == 0) { 
+    sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
+    Serial.print(buff_str); 
 
-  Serial.println(); 
+    if (bt_rxvalue_str.length() > 0) { 
+      Serial.print("<- "); 
+      for (int i = 0; i < bt_rxvalue_str.length(); i++) { 
+        Serial.print(bt_rxvalue_str[i]); 
+      } 
+      bt_rxvalue_str = "";
+    } 
+
+    if (bt_connected_str.length() > 0) {
+      Serial.print(bt_connected_str); 
+      bt_connected_str = "";
+    }
+
+    Serial.println(); 
+  } 
 
 //----------------------------------------------------------------------------- 
-  while ((micros() - t_old) < 1000000L); t_old = micros(); 
+  while ((micros() - t_old) < 100000L); t_old = micros(); 
   tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
 
 } 
