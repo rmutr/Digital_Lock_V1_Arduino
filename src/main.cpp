@@ -46,8 +46,6 @@ int state_ix_mon = 0;
 
 volatile int req_machine_start = 0; 
 
-int bluetooth_linked = 0; 
-
 //----------------------------------------------------------------------------- 
 #define SCREEN_WIDTH       128 
 #define SCREEN_HEIGHT       64 
@@ -73,9 +71,13 @@ LiquidCrystal_PCF8574 clcd(CLCD_ADD_27);
 //----------------------------------------------------------------------------- 
 BLEServer *pServer; 
 BLECharacteristic *pTxCharacteristic; 
-bool deviceConnected = false; 
-bool oldDeviceConnected = false; 
-uint8_t txvalue = 0; 
+bool bt_connected = false; 
+bool bt_connected_old = false; 
+String bt_connected_str = ""; 
+std::string bt_pincode_str = ""; 
+std::string bt_rxvalue_str = ""; 
+std::string bt_txvalue_str = ""; 
+uint8_t bt_txvalue_u8 = 0; 
 
 // See the following for generating UUIDs: 
 // https://www.uuidgenerator.net/ 
@@ -91,28 +93,18 @@ void Interrupt_Service_Btn_Start() { req_machine_start = 1; }
 
 class MyServerCallbacks: public BLEServerCallbacks { 
   void onConnect(BLEServer* pServer) { 
-    deviceConnected = true; 
+    bt_connected = true; 
     //BLEDevice::startAdvertising(); 
   }; 
 
   void onDisconnect(BLEServer* pServer) { 
-    deviceConnected = false; 
+    bt_connected = false; 
   } 
 }; 
 
 class MyCallbacks: public BLECharacteristicCallbacks { 
   void onWrite(BLECharacteristic *pCharacteristic) { 
-    std::string rxvalue = pCharacteristic->getValue(); 
-
-    if (rxvalue.length() > 0) { 
-
-      Serial.print("Received Value: "); 
-      for (int i = 0; i < rxvalue.length(); i++) { 
-        Serial.print(rxvalue[i]); 
-      } 
-      Serial.println(); 
-
-    } 
+    bt_rxvalue_str = pCharacteristic->getValue(); 
   } 
 }; 
 
@@ -182,38 +174,55 @@ void setup() {
   state_ix = 0; 
   state_ix_mon = 0; 
   req_machine_start = 0; 
-  bluetooth_linked = 0; 
+
+  bt_connected = false; 
+  bt_connected_old = false; 
+  bt_connected_str = "";
+  bt_pincode_str = "1234"; 
+  bt_rxvalue_str = ""; 
+  bt_txvalue_str = "";
+  bt_txvalue_u8 = 0; 
 
 } 
 
 void loop() { 
-  //connected 
-  bluetooth_linked = 0; 
-  if (deviceConnected) { 
-    bluetooth_linked = 1; 
-    char bstr[50] = {0}; sprintf(bstr, "%02d", txvalue); 
+  if (bt_connected == true) { 
+    char bstr[50] = {0}; sprintf(bstr, "%02d", bt_txvalue_u8); 
     pTxCharacteristic->setValue(bstr); 
     pTxCharacteristic->notify(); 
-    txvalue++; if (txvalue >= 100) { txvalue = 0; } 
+    bt_txvalue_u8++; if (bt_txvalue_u8 >= 100) { bt_txvalue_u8 = 0; } 
     delay(1000); 
   } 
 
-  // disconnecting 
-  if (!deviceConnected && oldDeviceConnected) { 
-    delay(500); // give the bluetooth stack the chance to get things ready 
-    pServer->startAdvertising(); // restart advertising 
-    Serial.println("start advertising"); 
-    oldDeviceConnected = deviceConnected; 
-  } 
-
-  // connecting 
-  if (deviceConnected && !oldDeviceConnected) { 
-    oldDeviceConnected = deviceConnected; 
+  if (bt_connected_old != bt_connected) { 
+    bt_connected_old = bt_connected; 
+    if (bt_connected == false) { 
+      delay(500); // give the bluetooth stack the chance to get things ready 
+      pServer->startAdvertising(); // restart advertising 
+      bt_connected_str = "-> Buletooth disconnected"; 
+    } else { 
+      bt_connected_str = "-> Buletooth connected"; 
+    } 
   } 
 
 //----------------------------------------------------------------------------- 
-  sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bluetooth_linked, req_machine_start); 
-  Serial.println(buff_str); 
+  sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
+  Serial.print(buff_str); 
+
+  if (bt_rxvalue_str.length() > 0) { 
+    Serial.print("<- "); 
+    for (int i = 0; i < bt_rxvalue_str.length(); i++) { 
+      Serial.print(bt_rxvalue_str[i]); 
+    } 
+    bt_rxvalue_str = "";
+  } 
+
+  if (bt_connected_str.length() > 0) {
+    Serial.print(bt_connected_str); 
+    bt_connected_str = "";
+  }
+
+  Serial.println(); 
 
 //----------------------------------------------------------------------------- 
   while ((micros() - t_old) < 1000000L); t_old = micros(); 
