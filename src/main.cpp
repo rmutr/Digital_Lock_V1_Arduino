@@ -199,9 +199,9 @@ void loop() {
     if (bt_connected == false) { 
       delay(500); // give the bluetooth stack the chance to get things ready 
       pServer->startAdvertising(); // restart advertising 
-      bt_connected_str = "-> Buletooth disconnected"; 
+      bt_connected_str = "-> Bluetooth disconnected"; 
     } else { 
-      bt_connected_str = "-> Buletooth connected"; 
+      bt_connected_str = "-> Bluetooth connected"; 
     } 
   } 
 
