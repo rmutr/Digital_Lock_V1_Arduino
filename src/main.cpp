@@ -231,12 +231,7 @@ void loop() {
       break; 
 
     case 5: 
-      if (tmr_cnt == 0) { 
-        sprintf(buff_str, "%02d", bt_txvalue_u8); 
-        pTxCharacteristic->setValue(buff_str); 
-        pTxCharacteristic->notify(); 
-        bt_txvalue_u8++; if (bt_txvalue_u8 >= 100) { bt_txvalue_u8 = 0; } 
-      } 
+      
       break; 
 
   } 
@@ -244,6 +239,12 @@ void loop() {
 //----------------------------------------------------------------------------- 
   if (tmr_cnt == 0) { 
     sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
+
+    if (bt_connected == true) { 
+      pTxCharacteristic->setValue(buff_str); 
+      pTxCharacteristic->notify(); 
+    }
+
     Serial.print(buff_str); 
 
     if (bt_rxvalue_str.length() > 0) { 
