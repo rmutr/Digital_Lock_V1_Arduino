@@ -72,13 +72,12 @@ LiquidCrystal_PCF8574 clcd(CLCD_ADD_27);
 //----------------------------------------------------------------------------- 
 BLEServer *pServer; 
 BLECharacteristic *pTxCharacteristic; 
-bool bt_connected = false; 
-bool bt_connected_old = false; 
+volatile bool bt_connected = false; 
+volatile bool bt_connected_old = false; 
 String bt_connected_str = ""; 
 std::string bt_pincode_str = ""; 
 std::string bt_rxvalue_str = ""; 
-std::string bt_txvalue_str = ""; 
-uint8_t bt_txvalue_u8 = 0; 
+String bt_rxdata_str = ""; 
 
 // See the following for generating UUIDs: 
 // https://www.uuidgenerator.net/ 
@@ -95,7 +94,6 @@ void Interrupt_Service_Btn_Start() { req_machine_start = 1; }
 class MyServerCallbacks: public BLEServerCallbacks { 
   void onConnect(BLEServer* pServer) { 
     bt_connected = true; 
-    //BLEDevice::startAdvertising(); 
   }; 
 
   void onDisconnect(BLEServer* pServer) { 
@@ -106,6 +104,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 class MyCallbacks: public BLECharacteristicCallbacks { 
   void onWrite(BLECharacteristic *pCharacteristic) { 
     bt_rxvalue_str = pCharacteristic->getValue(); 
+    bt_rxdata_str = String(bt_rxvalue_str.c_str());
   } 
 }; 
 
@@ -182,8 +181,6 @@ void setup() {
   bt_connected_str = "";
   bt_pincode_str = "1234"; 
   bt_rxvalue_str = ""; 
-  bt_txvalue_str = "";
-  bt_txvalue_u8 = 0; 
 
 } 
 
@@ -231,7 +228,13 @@ void loop() {
       break; 
 
     case 5: 
-      
+      if (bt_rxdata_str.length() > 0) { 
+        clcd.setCursor(0, CLCD_LINE_1); 
+        clcd.print("                "); 
+        clcd.setCursor(0, CLCD_LINE_1); 
+        clcd.print(bt_rxdata_str); 
+        bt_rxdata_str = "";
+      }       
       break; 
 
   } 
