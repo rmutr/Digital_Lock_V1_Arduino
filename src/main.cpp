@@ -47,6 +47,7 @@ int error = 0;
 int state_ix = 0; 
 int state_ix_mon = 0; 
 
+int machine_run = 0; 
 volatile int req_machine_start = 0; 
 
 //----------------------------------------------------------------------------- 
@@ -181,6 +182,7 @@ void setup() {
   error = 0; 
   state_ix = 0; 
   state_ix_mon = 0; 
+  machine_run = 0; 
   req_machine_start = 0; 
 
   bt_connected = false; 
@@ -203,6 +205,8 @@ void loop() {
       msg_connected_str = "-> Bluetooth connected"; 
     } 
   } 
+
+//----------------------------------------------------------------------------- 
 
 //----------------------------------------------------------------------------- 
   state_ix_mon = state_ix; 
@@ -245,11 +249,13 @@ void loop() {
             if ((bcmd_str == "C0-") && (bcmd_len == 7)) { 
               msg_pincode_str = "-> Command : Machine Stop"; 
               bt_login = 1; 
+              machine_run = 0; 
             } 
 
             if ((bcmd_str == "C1-") && (bcmd_len == 7)) { 
               msg_pincode_str = "-> Command : Machine Start"; 
               bt_login = 1; 
+              machine_run = 1; 
             } 
 
             if ((bcmd_str == "C2-") && (bcmd_len == 7)) { 
@@ -283,6 +289,12 @@ void loop() {
   } 
 
 //----------------------------------------------------------------------------- 
+  if (machine_run == 0) { 
+
+  } else { 
+
+  } 
+
   if (alarm_1sec == 0) { 
     digitalWrite(PIN_ALARM, HIGH); 
   } else { 
@@ -293,12 +305,14 @@ void loop() {
   if (tmr_cnt == 0) { 
     bool bbusy = false; 
 
-    sprintf(buff_str, " St-%02d Cnt-%d Mc-%d A-%04d | ", state_ix_mon, bt_connected, req_machine_start, alarm_1sec); 
+    sprintf(buff_str, " St-%02d Cnt-%d Li-%d Mc-%d A-%04d | ", state_ix_mon, bt_connected, bt_login, machine_run, alarm_1sec); 
 
     if ((bt_connected == true) && (bt_login == 1)) { 
-      pTxCharacteristic->setValue(buff_str); 
+      char btxdata_str[200] = {0}; 
+      sprintf(btxdata_str, "Mc-%d A-%04d", machine_run, alarm_1sec); 
+      pTxCharacteristic->setValue(btxdata_str); 
       pTxCharacteristic->notify(); 
-    }
+    } 
 
     Serial.print(buff_str); 
 
