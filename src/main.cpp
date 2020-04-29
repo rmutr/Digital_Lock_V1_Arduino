@@ -30,6 +30,7 @@
 
 #define PIN_PROCESS          2 
 #define PIN_BTN_START       16 
+#define PIN_ALARM            2 
 
 #define PNP_OFF              0 
 #define PNP_ON               1 
@@ -40,6 +41,7 @@ char buff_str[200] = {0};
 unsigned long t_old = 0; 
 int tmr_cnt = 0; 
 int wait_100ms = 0; 
+int alarm_1sec = 0;
 int error = 0; 
 
 int state_ix = 0; 
@@ -113,11 +115,13 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
 //----------------------------------------------------------------------------- 
 void setup() { 
-  pinMode(PIN_PROCESS,   OUTPUT); 
+  pinMode(PIN_PROCESS, OUTPUT); 
   pinMode(PIN_BTN_START, INPUT_PULLUP); 
+  pinMode(PIN_ALARM, OUTPUT); 
 
-  digitalWrite(PIN_PROCESS,   HIGH); 
+  digitalWrite(PIN_PROCESS, HIGH); 
   digitalWrite(PIN_BTN_START, HIGH); 
+  digitalWrite(PIN_ALARM, HIGH); 
 
   attachInterrupt(digitalPinToInterrupt(PIN_BTN_START) 
     , Interrupt_Service_Btn_Start, FALLING); 
@@ -173,6 +177,7 @@ void setup() {
   t_old = 0; 
   tmr_cnt = 0; 
   wait_100ms = 0; 
+  alarm_1sec = 0; 
   error = 0; 
   state_ix = 0; 
   state_ix_mon = 0; 
@@ -215,11 +220,7 @@ void loop() {
       break; 
 
     case 2: 
-      if (wait_100ms > 0) { 
-        wait_100ms--;
-      } else { 
-        state_ix++;
-      }
+      if (wait_100ms == 0) { state_ix++; } 
       break; 
 
     case 3: 
@@ -243,12 +244,12 @@ void loop() {
           } else { 
             if ((bcmd_str == "C0-") && (bcmd_len == 7)) { 
               msg_pincode_str = "-> Command : Machine Stop"; 
-
+              bt_login = 1; 
             } 
 
             if ((bcmd_str == "C1-") && (bcmd_len == 7)) { 
               msg_pincode_str = "-> Command : Machine Start"; 
-
+              bt_login = 1; 
             } 
 
             if ((bcmd_str == "C2-") && (bcmd_len == 7)) { 
@@ -260,11 +261,17 @@ void loop() {
               String bpin_new_str = bt_rxdata_str.substring(8, 12); 
               bt_pincode_str = bpin_new_str; 
               msg_pincode_str = "-> Command : Change Pincode to " + bpin_new_str; 
+              bt_login = 1; 
             } 
 
             if ((bcmd_str == "C4-") && (bcmd_len == 12)) { 
-              msg_pincode_str = "-> Command : Machine Alarm TTTT Sec."; 
-
+              String balarm_str = bt_rxdata_str.substring(8, 12); 
+              alarm_1sec = balarm_str.toInt(); 
+              if (alarm_1sec < 0) { alarm_1sec = 0; } 
+              if (alarm_1sec > 9999) { alarm_1sec = 9999; } 
+              balarm_str = String(alarm_1sec); 
+              msg_pincode_str = "-> Command : Machine Alarm " + balarm_str + " Sec."; 
+              bt_login = 1; 
             } 
           }
         } 
@@ -276,10 +283,17 @@ void loop() {
   } 
 
 //----------------------------------------------------------------------------- 
+  if (alarm_1sec == 0) { 
+    digitalWrite(PIN_ALARM, HIGH); 
+  } else { 
+    digitalWrite(PIN_ALARM, LOW); 
+  } 
+
+//----------------------------------------------------------------------------- 
   if (tmr_cnt == 0) { 
     bool bbusy = false; 
 
-    sprintf(buff_str, " St-%02d Cnt-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
+    sprintf(buff_str, " St-%02d Cnt-%d Mc-%d A-%04d | ", state_ix_mon, bt_connected, req_machine_start, alarm_1sec); 
 
     if ((bt_connected == true) && (bt_login == 1)) { 
       pTxCharacteristic->setValue(buff_str); 
@@ -315,6 +329,9 @@ void loop() {
 //----------------------------------------------------------------------------- 
   while ((micros() - t_old) < 100000L); t_old = micros(); 
   tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
-
+  if (wait_100ms > 0) { wait_100ms--; } 
+  if (tmr_cnt == 0) { 
+    if (alarm_1sec > 0) { alarm_1sec--; } 
+  }
 } 
 
