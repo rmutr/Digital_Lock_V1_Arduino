@@ -48,7 +48,8 @@ int state_ix = 0;
 int state_ix_mon = 0; 
 
 int machine_run = 0; 
-volatile int req_machine_start = 0; 
+volatile int machine_stop_start_req = 0; 
+int machine_req_wait_100ms = 0; 
 
 //----------------------------------------------------------------------------- 
 #define SCREEN_WIDTH       128 
@@ -94,7 +95,7 @@ String msg_pincode_str = "";
 //----------------------------------------------------------------------------- 
 void Interrupt_Service_Btn_Start(); 
 
-void Interrupt_Service_Btn_Start() { req_machine_start = 1; } 
+void Interrupt_Service_Btn_Start() { machine_stop_start_req = 1; } 
 
 class MyServerCallbacks: public BLEServerCallbacks { 
   void onConnect(BLEServer* pServer) { 
@@ -183,7 +184,7 @@ void setup() {
   state_ix = 0; 
   state_ix_mon = 0; 
   machine_run = 0; 
-  req_machine_start = 0; 
+  machine_stop_start_req = 0; 
 
   bt_connected = false; 
   bt_connected_old = false; 
@@ -207,6 +208,13 @@ void loop() {
   } 
 
 //----------------------------------------------------------------------------- 
+  if (machine_stop_start_req == 1) { 
+    machine_stop_start_req = 0; 
+     if (machine_req_wait_100ms == 0) { 
+       machine_req_wait_100ms = 50; 
+       machine_run = !machine_run; 
+     }
+  } 
 
 //----------------------------------------------------------------------------- 
   state_ix_mon = state_ix; 
@@ -279,6 +287,12 @@ void loop() {
               msg_pincode_str = "-> Command : Machine Alarm " + balarm_str + " Sec."; 
               bt_login = 1; 
             } 
+
+            if ((bcmd_str == "C5-") && (bcmd_len == 7)) { 
+              msg_pincode_str = "-> Command : Test interrupt stop start switch"; 
+              bt_login = 1; 
+              machine_stop_start_req = 1; 
+            }
           }
         } 
 
@@ -305,7 +319,8 @@ void loop() {
   if (tmr_cnt == 0) { 
     bool bbusy = false; 
 
-    sprintf(buff_str, " St-%02d Cnt-%d Li-%d Mc-%d A-%04d | ", state_ix_mon, bt_connected, bt_login, machine_run, alarm_1sec); 
+    sprintf(buff_str, " St-%02d Sw-%02d Cnt-%d Li-%d Mc-%d A-%04d | "
+      , state_ix_mon, machine_req_wait_100ms, bt_connected, bt_login, machine_run, alarm_1sec); 
 
     if ((bt_connected == true) && (bt_login == 1)) { 
       char btxdata_str[200] = {0}; 
@@ -343,9 +358,13 @@ void loop() {
 //----------------------------------------------------------------------------- 
   while ((micros() - t_old) < 100000L); t_old = micros(); 
   tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
+
   if (wait_100ms > 0) { wait_100ms--; } 
+
   if (tmr_cnt == 0) { 
     if (alarm_1sec > 0) { alarm_1sec--; } 
   }
+
+  if (machine_req_wait_100ms > 0) { machine_req_wait_100ms--; } 
 } 
 
