@@ -74,10 +74,12 @@ BLEServer *pServer;
 BLECharacteristic *pTxCharacteristic; 
 volatile bool bt_connected = false; 
 volatile bool bt_connected_old = false; 
-String bt_connected_str = ""; 
-std::string bt_pincode_str = ""; 
+String bt_pincode_str = ""; 
 std::string bt_rxvalue_str = ""; 
 String bt_rxdata_str = ""; 
+
+String msg_connected_str = ""; 
+String msg_pincode_str = ""; 
 
 // See the following for generating UUIDs: 
 // https://www.uuidgenerator.net/ 
@@ -178,10 +180,10 @@ void setup() {
 
   bt_connected = false; 
   bt_connected_old = false; 
-  bt_connected_str = "";
   bt_pincode_str = "1234"; 
   bt_rxvalue_str = ""; 
-
+  msg_connected_str = "";
+  msg_pincode_str = ""; 
 } 
 
 void loop() { 
@@ -189,10 +191,10 @@ void loop() {
   if (bt_connected_old != bt_connected) { 
     bt_connected_old = bt_connected; 
     if (bt_connected == false) { 
-      bt_connected_str = "-> Bluetooth disconnected"; 
+      msg_connected_str = "-> Bluetooth disconnected"; 
       state_ix = 0; 
     } else { 
-      bt_connected_str = "-> Bluetooth connected"; 
+      msg_connected_str = "-> Bluetooth connected"; 
     } 
   } 
 
@@ -229,18 +231,51 @@ void loop() {
 
     case 5: 
       if (bt_rxdata_str.length() > 0) { 
-        clcd.setCursor(0, CLCD_LINE_1); 
-        clcd.print("                "); 
-        clcd.setCursor(0, CLCD_LINE_1); 
-        clcd.print(bt_rxdata_str); 
+        if (bt_rxdata_str.length() >= 7) { 
+          String bcmd_str = bt_rxdata_str.substring(0, 3); 
+          String bpin_str = bt_rxdata_str.substring(3, 8); 
+          int bcmd_len = bt_rxdata_str.length(); 
+
+          if (bpin_str != bt_pincode_str) { 
+            msg_pincode_str = "-> Invalid Pincode"; 
+          } else { 
+            if ((bcmd_str == "C0-") && (bcmd_len == 7)) { 
+              msg_pincode_str = "-> Command : Machine Stop"; 
+
+            } 
+
+            if ((bcmd_str == "C1-") && (bcmd_len == 7)) { 
+              msg_pincode_str = "-> Command : Machine Start"; 
+
+            } 
+
+            if ((bcmd_str == "C2-") && (bcmd_len == 7)) { 
+              msg_pincode_str = "-> Command : Login"; 
+
+            } 
+
+            if ((bcmd_str == "C3-") && (bcmd_len == 12)) { 
+              msg_pincode_str = "-> Command : Change Pincode to NNNN"; 
+
+            } 
+
+            if ((bcmd_str == "C4-") && (bcmd_len == 12)) { 
+              msg_pincode_str = "-> Command : Machine Alarm TTTT Sec."; 
+
+            } 
+          }
+        } 
+
         bt_rxdata_str = "";
-      }       
+      } 
       break; 
 
   } 
 
 //----------------------------------------------------------------------------- 
   if (tmr_cnt == 0) { 
+    bool bbusy = false; 
+
     sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
 
     if (bt_connected == true) { 
@@ -250,7 +285,9 @@ void loop() {
 
     Serial.print(buff_str); 
 
-    if (bt_rxvalue_str.length() > 0) { 
+    if ((bbusy == false) && (bt_rxvalue_str.length() > 0)) { 
+      bbusy = true; 
+
       Serial.print("<- "); 
       for (int i = 0; i < bt_rxvalue_str.length(); i++) { 
         Serial.print(bt_rxvalue_str[i]); 
@@ -258,10 +295,17 @@ void loop() {
       bt_rxvalue_str = "";
     } 
 
-    if (bt_connected_str.length() > 0) {
-      Serial.print(bt_connected_str); 
-      bt_connected_str = "";
+    if ((bbusy == false) && (msg_connected_str.length() > 0)) { 
+      bbusy = true; 
+      Serial.print(msg_connected_str); 
+      msg_connected_str = "";
     }
+
+    if ((bbusy == false) && (msg_pincode_str.length() > 0)) { 
+      bbusy = true; 
+      Serial.print(msg_pincode_str); 
+      msg_pincode_str = ""; 
+    } 
 
     Serial.println(); 
   } 
@@ -271,5 +315,4 @@ void loop() {
   tmr_cnt++; if (tmr_cnt >= 10) { tmr_cnt = 0; } 
 
 } 
-
 
