@@ -233,7 +233,7 @@ void loop() {
       if (bt_rxdata_str.length() > 0) { 
         if (bt_rxdata_str.length() >= 7) { 
           String bcmd_str = bt_rxdata_str.substring(0, 3); 
-          String bpin_str = bt_rxdata_str.substring(3, 8); 
+          String bpin_str = bt_rxdata_str.substring(3, 7); 
           int bcmd_len = bt_rxdata_str.length(); 
 
           if (bpin_str != bt_pincode_str) { 
@@ -255,8 +255,9 @@ void loop() {
             } 
 
             if ((bcmd_str == "C3-") && (bcmd_len == 12)) { 
-              msg_pincode_str = "-> Command : Change Pincode to NNNN"; 
-
+              String bpin_new_str = bt_rxdata_str.substring(8, 12); 
+              bt_pincode_str = bpin_new_str; 
+              msg_pincode_str = "-> Command : Change Pincode to " + bpin_new_str; 
             } 
 
             if ((bcmd_str == "C4-") && (bcmd_len == 12)) { 
@@ -287,7 +288,6 @@ void loop() {
 
     if ((bbusy == false) && (bt_rxvalue_str.length() > 0)) { 
       bbusy = true; 
-
       Serial.print("<- "); 
       for (int i = 0; i < bt_rxvalue_str.length(); i++) { 
         Serial.print(bt_rxvalue_str[i]); 
