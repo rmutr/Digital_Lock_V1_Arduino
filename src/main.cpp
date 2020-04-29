@@ -77,7 +77,7 @@ volatile bool bt_connected_old = false;
 String bt_pincode_str = ""; 
 std::string bt_rxvalue_str = ""; 
 String bt_rxdata_str = ""; 
-
+int bt_login = 0; 
 String msg_connected_str = ""; 
 String msg_pincode_str = ""; 
 
@@ -182,6 +182,7 @@ void setup() {
   bt_connected_old = false; 
   bt_pincode_str = "1234"; 
   bt_rxvalue_str = ""; 
+  bt_login = 0; 
   msg_connected_str = "";
   msg_pincode_str = ""; 
 } 
@@ -204,6 +205,7 @@ void loop() {
   switch (state_ix) { 
     default: 
     case 0: 
+      bt_login = 0; 
       state_ix++; 
       break; 
 
@@ -251,7 +253,7 @@ void loop() {
 
             if ((bcmd_str == "C2-") && (bcmd_len == 7)) { 
               msg_pincode_str = "-> Command : Login"; 
-
+              bt_login = 1; 
             } 
 
             if ((bcmd_str == "C3-") && (bcmd_len == 12)) { 
@@ -277,9 +279,9 @@ void loop() {
   if (tmr_cnt == 0) { 
     bool bbusy = false; 
 
-    sprintf(buff_str, " S-%02d L-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
+    sprintf(buff_str, " St-%02d Cnt-%d SW-%d | ", state_ix_mon, bt_connected, req_machine_start); 
 
-    if (bt_connected == true) { 
+    if ((bt_connected == true) && (bt_login == 1)) { 
       pTxCharacteristic->setValue(buff_str); 
       pTxCharacteristic->notify(); 
     }
