@@ -246,57 +246,70 @@ void loop() {
 
     case 5: 
       if (bt_rxdata_str.length() > 0) { 
+        int bmsg_ok = 0; 
+
         if (bt_rxdata_str.length() >= 7) { 
           String bcmd_str = bt_rxdata_str.substring(0, 3); 
           String bpin_str = bt_rxdata_str.substring(3, 7); 
           int bcmd_len = bt_rxdata_str.length(); 
 
-          if (bpin_str != bt_pincode_str) { 
-            msg_pincode_str = "-> Invalid Pincode"; 
-          } else { 
-            if ((bcmd_str == "C0-") && (bcmd_len == 7)) { 
-              msg_pincode_str = "-> Command : Machine Stop"; 
-              bt_login = 1; 
-              machine_run = 0; 
-            } 
+          if (bt_rxdata_str == "Hi, ESP32") { 
+            bmsg_ok = 1; 
+            msg_pincode_str = "-> Hi, Flutter"; 
+          } 
 
-            if ((bcmd_str == "C1-") && (bcmd_len == 7)) { 
-              msg_pincode_str = "-> Command : Machine Start"; 
-              bt_login = 1; 
-              machine_run = 1; 
-            } 
+          if ((bcmd_str == "C0-") && (bcmd_len == 7) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            msg_pincode_str = "-> Command : Machine Stop"; 
+            bt_login = 1; 
+            machine_run = 0; 
+          } 
 
-            if ((bcmd_str == "C2-") && (bcmd_len == 7)) { 
-              msg_pincode_str = "-> Command : Login"; 
-              bt_login = 1; 
-            } 
+          if ((bcmd_str == "C1-") && (bcmd_len == 7) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            msg_pincode_str = "-> Command : Machine Start"; 
+            bt_login = 1; 
+            machine_run = 1; 
+          } 
 
-            if ((bcmd_str == "C3-") && (bcmd_len == 12)) { 
-              String bpin_new_str = bt_rxdata_str.substring(8, 12); 
-              bt_pincode_str = bpin_new_str; 
-              msg_pincode_str = "-> Command : Change Pincode to " + bpin_new_str; 
-              bt_login = 1; 
-            } 
+          if ((bcmd_str == "C2-") && (bcmd_len == 7) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            msg_pincode_str = "-> Command : Login"; 
+            bt_login = 1; 
+          } 
 
-            if ((bcmd_str == "C4-") && (bcmd_len == 12)) { 
-              String balarm_str = bt_rxdata_str.substring(8, 12); 
-              alarm_1sec = balarm_str.toInt(); 
-              if (alarm_1sec < 0) { alarm_1sec = 0; } 
-              if (alarm_1sec > 9999) { alarm_1sec = 9999; } 
-              balarm_str = String(alarm_1sec); 
-              msg_pincode_str = "-> Command : Machine Alarm " + balarm_str + " Sec."; 
-              bt_login = 1; 
-            } 
+          if ((bcmd_str == "C3-") && (bcmd_len == 12) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            String bpin_new_str = bt_rxdata_str.substring(8, 12); 
+            bt_pincode_str = bpin_new_str; 
+            msg_pincode_str = "-> Command : Change Pincode to " + bpin_new_str; 
+            bt_login = 1; 
+          } 
 
-            if ((bcmd_str == "C5-") && (bcmd_len == 7)) { 
-              msg_pincode_str = "-> Command : Test interrupt stop start switch"; 
-              bt_login = 1; 
-              machine_stop_start_req = 1; 
-            }
-          }
+          if ((bcmd_str == "C4-") && (bcmd_len == 12) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            String balarm_str = bt_rxdata_str.substring(8, 12); 
+            alarm_1sec = balarm_str.toInt(); 
+            if (alarm_1sec < 0) { alarm_1sec = 0; } 
+            if (alarm_1sec > 9999) { alarm_1sec = 9999; } 
+            balarm_str = String(alarm_1sec); 
+            msg_pincode_str = "-> Command : Machine Alarm " + balarm_str + " Sec."; 
+            bt_login = 1; 
+          } 
+
+          if ((bcmd_str == "C5-") && (bcmd_len == 7) && (bpin_str == bt_pincode_str)) { 
+            bmsg_ok = 1; 
+            msg_pincode_str = "-> Command : Test interrupt stop start switch"; 
+            bt_login = 1; 
+            machine_stop_start_req = 1; 
+          } 
         } 
 
-        bt_rxdata_str = "";
+        if (bmsg_ok == 0) { 
+          msg_pincode_str = "-> Invalid message!!!"; 
+        } 
+
+        bt_rxdata_str = ""; 
       } 
       break; 
 
