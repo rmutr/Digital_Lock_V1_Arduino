@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------- 
-// Project          : RmutR Digital Lock V1 
+// Project          : RMUTR Digital Lock V1 
 // VSCode Extension : PlatformIO IDE 1.10.0 
 // Source           : https://github.com/rmutr/Digital_Lock_V1_Arduino.git 
 // Board            : Node32s (Gravitech Node32Lite LamLoei) 
