@@ -315,7 +315,7 @@ void loop() {
             String bpin_new_str = bt_rxdata_str.substring(8, 12); 
             bt_pincode_str = bpin_new_str; 
             msg_pincode_str = "-> Command : Change Pincode to " + bpin_new_str; 
-            bt_login = 1; 
+            bt_login = 0; 
  //----------------------------------------------------------------------------- 
             if(readEEPROM(EEPROM_I2C_ADDRESS, address) == 30)
               address += 5;
