@@ -387,6 +387,11 @@ void loop() {
     } 
 
     Serial.print(buff_str); 
+    
+    display.clearDisplay(); 
+    display.setCursor(0, GLCD_LINE_1); 
+    display.println(F(buff_str)); 
+    display.display();
 
     if ((bbusy == false) && (bt_rxvalue_str.length() > 0)) { 
       bbusy = true; 
