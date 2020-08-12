@@ -8,6 +8,8 @@
 //----------------------------------------------------------------------------- 
 #include <Arduino.h>
 
+#include <ESP32Servo.h>
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -35,6 +37,12 @@
 #define NPN_OFF              1 
 #define NPN_ON               0 
 
+#define EEPROM_I2C_ADDRESS 0x50  
+#define PIN_RELAY_A         26
+#define PIN_RELAY_B         25
+#define PIN_RELAY_C         27
+#define PIN_SERVO           14
+
 char buff_str[200] = {0}; 
 unsigned long t_old = 0; 
 int tmr_cnt = 0; 
@@ -49,16 +57,8 @@ int machine_run = 0;
 volatile int machine_stop_start_req = 0; 
 int machine_req_wait_100ms = 0; 
 
-//-----------------------------------------------------------------------------Add
-#include <ESP32Servo.h>
-#define EEPROM_I2C_ADDRESS 0x50  
-#define PIN_RELAY_A         26
-#define PIN_RELAY_B         25
-#define PIN_RELAY_C         27
-#define PIN_SERVO           14
-
-Servo myservo; 
 int address = 0;
+Servo myservo; 
 //----------------------------------------------------------------------------- 
 #define SCREEN_WIDTH       128 
 #define SCREEN_HEIGHT       64 
@@ -213,6 +213,7 @@ void setup() {
   for (int str=0; str < 4; str++)
     bt_pincode_str += readEEPROM(EEPROM_I2C_ADDRESS, (address+str+1));
 
+//-----------------------------------------------------------------------------servo
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
@@ -242,7 +243,8 @@ void loop() {
     machine_stop_start_req = 0; 
      if (machine_req_wait_100ms == 0) { 
        machine_req_wait_100ms = 50; 
-       if(bt_login == 1){ machine_run = !machine_run; }
+       if(bt_login == 1 && machine_run == 0){ machine_run = !machine_run; }
+       else{ machine_run = 0; bt_login = 0;}
      }
   } 
 
@@ -272,7 +274,6 @@ void loop() {
 
     case 4: 
       if (bt_connected == true) { state_ix++; } 
-      else{machine_run = 0;}
       break; 
 
     case 5: 
@@ -292,7 +293,7 @@ void loop() {
           if ((bcmd_str == "C0-") && (bcmd_len == 7) && (bpin_str == bt_pincode_str)) { 
             bmsg_ok = 1; 
             msg_pincode_str = "-> Command : Machine Stop"; 
-            bt_login = 1; 
+            bt_login = 0; 
             machine_run = 0; 
           } 
 
