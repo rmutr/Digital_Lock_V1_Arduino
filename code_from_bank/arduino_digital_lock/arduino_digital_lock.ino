@@ -243,8 +243,7 @@ void loop() {
     machine_stop_start_req = 0; 
      if (machine_req_wait_100ms == 0) { 
        machine_req_wait_100ms = 50; 
-       if(bt_login == 1 && machine_run == 0){ machine_run = !machine_run; }
-       else{ machine_run = 0; bt_login = 0;}
+       if(machine_run == 1){ machine_run = !machine_run; }
      }
   } 
 
