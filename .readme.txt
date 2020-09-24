@@ -9,6 +9,7 @@ GitHub
 2 https://git-scm.com 
 3 download and install 
 4 Config git 
+    Git Bash>git update-git-for-windows 
     Git Bash>git --version 
     Git Bash>git config --global user.name "[Username]" 
     Git Bash>git config --global user.email "[Email]" 
